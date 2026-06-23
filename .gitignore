@@ -1,0 +1,40 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.log
+faq-bot/uploaded_docs/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# VS Code settings (optional)
+.vscode/
+
+# Node.js / Next.js
+node_modules/
+.next/
+dist/
+out/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Log and cache
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.cache/
+.pnp/
+.pnp.js
+
+# OS-specific
+*.swp
+*~

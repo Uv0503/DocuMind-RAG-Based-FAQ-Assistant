@@ -1,0 +1,21 @@
+{
+  "info": {
+    "name": "FAQ Bot Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Ask a Question",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "http://localhost:8888/ask", "host": ["http://localhost:8888"], "path": ["ask"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"question\": \"What is the purpose of this bot?\" }"
+        }
+      },
+      "response": []
+    }
+  ]
+}
