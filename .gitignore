@@ -6,6 +6,7 @@ __pycache__/
 *.pyd
 *.sqlite3
 *.log
+.zip
 faq-bot/uploaded_docs/
 
 # Environment variables
