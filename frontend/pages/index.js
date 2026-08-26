@@ -2,8 +2,9 @@
 
 // Browser-visible environment variables must use Next.js's NEXT_PUBLIC_ prefix.
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8888'
-const NETWORK_ERROR =
-  'Backend is not reachable. Please make sure FastAPI is running on port 8888.'
+const NETWORK_ERROR = process.env.NEXT_PUBLIC_API_URL
+  ? 'The backend service is temporarily unavailable. Please wait a moment and try again.'
+  : 'Backend is not reachable. Please make sure FastAPI is running on port 8888.'
 
 function message(role, content, sources = [], loading = false) {
   // A single message shape supports user messages, pending placeholders, and sourced answers.

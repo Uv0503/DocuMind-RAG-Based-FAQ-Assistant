@@ -13,6 +13,11 @@ services:
         value: "30"
       - key: ALLOW_MODEL_DOWNLOAD
         value: "true"
+      # Render's free 512 MB instance cannot reliably hold PyTorch and the
+      # sentence-transformer model. The API's lexical retriever keeps uploads
+      # and grounded answers available without loading that stack at runtime.
+      - key: USE_EMBEDDINGS
+        value: "false"
       - key: DATABASE_URL
         sync: false
       - key: GROQ_API_KEY
