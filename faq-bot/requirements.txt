@@ -1,3 +1,4 @@
+# Runtime dependencies are grouped by architectural responsibility below.
 # FastAPI backend and async database access.
 annotated-types==0.7.0
 anyio==4.9.0

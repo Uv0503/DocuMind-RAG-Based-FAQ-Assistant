@@ -1,4 +1,5 @@
 ﻿@import "tailwindcss";
+/* Global design tokens and browser-level defaults shared by every Next.js page. */
 :root{
   font-family:Arial,sans-serif;
   color:#1d2a36;
@@ -8,40 +9,93 @@
   box-sizing:border-box
 }
 html,body,#__next{
+  height:100%;
   min-height:100%;
-  margin:0
+  margin:0;
+  overflow:hidden
 }
 button,textarea,input{
   font:inherit
 }
+.auth-shell{
+  display:grid;
+  min-height:100vh;
+  place-items:center;
+  padding:24px;
+  background:linear-gradient(135deg,#eaf6f2,#f7f9fb)
+}
+.auth-card{
+  width:min(100%,400px);
+  padding:32px;
+  border:1px solid #d9e5e1;
+  border-radius:16px;
+  background:white;
+  box-shadow:0 18px 55px rgba(27,61,54,.12)
+}
+.auth-brand{display:flex;align-items:center;gap:10px;color:#18332d;font-size:21px;font-weight:bold}
+.auth-brand b{display:grid;width:38px;height:38px;place-items:center;background:#78d6bf;color:#10211f}
+.auth-card h1{margin:24px 0 8px;font-size:24px}.auth-card p{margin:0 0 22px;color:#607080;line-height:1.5}
+.auth-card label{display:block;margin:14px 0 0;color:#41515e;font-size:13px;font-weight:bold}
+.auth-card input{width:100%;margin-top:6px;padding:11px;border:1px solid #cbd6de;border-radius:7px;outline-color:#58bda5}
+.auth-card button{width:100%;min-height:42px;margin-top:20px;border:0;border-radius:7px;color:#10211f;background:#78d6bf;font-weight:bold;cursor:pointer}
+.auth-card .auth-switch{margin-top:10px;color:#397564;background:transparent}
+/* Top-level application shell: fixed-width navigation beside a flexible chat workspace. */
 .app{
   display:grid;
   grid-template-columns:280px 1fr;
-  min-height:100vh
+  height:100vh;
+  max-height:100vh;
+  overflow:hidden
 }
 .sidebar{
   position:relative;
+  height:100vh;
+  min-height:0;
   padding:18px;
   background:#19242d;
-  color:#e7edf3
+  color:#e7edf3;
+  overflow:hidden
 }
 .sidebar-body{
   display:flex;
   flex-direction:column;
   gap:16px;
-  height:100%
+  height:100%;
+  min-height:0;
+  overflow:hidden
 }
 .sidebar-toggle{
   position:absolute;
   top:16px;
-  right:-16px;
+  right: 5px;
   z-index:2;
   width:32px;
   height:32px;
   border:1px solid #52636e;
   border-radius:50%;
   color:white;
-  background:#19242d
+  background:#19242d;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+  padding:0;
+  line-height:1;
+  transition:background .2s ease,border-color .2s ease,transform .2s ease
+}
+.sidebar-toggle span{
+  display:block;
+  margin-top:-2px;
+  font-size:26px;
+  font-weight:300
+}
+.sidebar-toggle:hover{
+  border-color:#78d6bf;
+  background:#263943;
+  transform:scale(1.06)
+}
+.sidebar-toggle:focus-visible{
+  outline:3px solid rgba(120,214,191,.4);
+  outline-offset:2px
 }
 .is-collapsed{
   grid-template-columns:64px 1fr
@@ -52,6 +106,7 @@ button,textarea,input{
 .is-collapsed .sidebar-body{
   display:none
 }
+/* Sidebar identity, document upload controls, knowledge status, and persisted history. */
 .brand{
   display:flex;
   gap:10px;
@@ -76,6 +131,22 @@ button,textarea,input{
   color:white;
   background:transparent
 }
+.account-button{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  overflow:hidden;
+  border:0;
+  padding:0 4px;
+  color:#9cabb7;
+  background:transparent;
+  font-size:12px;
+  text-align:left;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  cursor:pointer
+}
+.account-button span{color:#8ce1c9}
 aside section{
   border-top:1px solid #34434e;
   padding-top:14px
@@ -98,6 +169,126 @@ aside section>button{
   color:#10211f;
   background:#78d6bf
 }
+.knowledge-upload{
+  position:relative
+}
+.file-input{
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  white-space:nowrap;
+  clip-path:inset(50%)
+}
+.file-picker{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  min-height:76px;
+  padding:14px;
+  border:1px dashed #63808d;
+  border-radius:10px;
+  color:#e7edf3;
+  background:rgba(120,214,191,.06);
+  margin-bottom:0;
+  font-size:inherit;
+  font-weight:normal;
+  text-transform:none;
+  cursor:pointer;
+  transition:border-color .2s ease,background .2s ease,box-shadow .2s ease,transform .2s ease
+}
+.file-picker:hover,
+.knowledge-upload:focus-within .file-picker{
+  border-color:#78d6bf;
+  background:rgba(120,214,191,.14);
+  box-shadow:0 0 0 3px rgba(120,214,191,.12);
+  transform:translateY(-1px)
+}
+.file-picker-icon,
+.file-check{
+  display:grid;
+  flex:0 0 34px;
+  width:34px;
+  height:34px;
+  place-items:center;
+  border-radius:9px;
+  color:#10211f;
+  background:#78d6bf;
+  font-size:20px;
+  font-weight:bold
+}
+.file-picker strong,
+.file-picker small{
+  display:block
+}
+.file-picker strong{
+  font-size:15px
+}
+.file-picker small{
+  margin-top:3px;
+  color:#9cabb7;
+  font-size:12px
+}
+.file-selection{
+  padding:12px;
+  border:1px solid rgba(120,214,191,.55);
+  border-radius:10px;
+  background:rgba(120,214,191,.1)
+}
+.file-selection-name{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+  color:#f1f7f8;
+  font-size:13px;
+  font-weight:bold
+}
+.file-selection-name>span:last-child{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap
+}
+.file-check{
+  flex-basis:23px;
+  width:23px;
+  height:23px;
+  border-radius:50%;
+  font-size:14px
+}
+.file-actions{
+  display:flex;
+  gap:8px;
+  margin-top:12px
+}
+.file-actions button{
+  min-height:37px;
+  padding:8px 12px;
+  border-radius:7px;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:bold
+}
+.file-actions .upload-action{
+  flex:1;
+  border:1px solid #78d6bf;
+  color:#10211f;
+  background:#78d6bf
+}
+.file-actions .cancel-action{
+  border:1px solid #52636e;
+  color:#dce5eb;
+  background:transparent
+}
+.file-actions button:hover:not(:disabled){
+  filter:brightness(1.08)
+}
+.file-actions button:disabled{
+  cursor:wait;
+  opacity:.65
+}
 .error,.success{
   display:block;
   margin-top:8px;
@@ -112,10 +303,7 @@ aside section>button{
   color:#8ce1c9
 }
 .history-panel>div{
-  max-height:150px;
-  overflow-y:auto;
-  scrollbar-width:thin;
-  scrollbar-color:#60717d transparent
+  overflow:hidden
 }
 .history-item{
   display:block;
@@ -129,13 +317,17 @@ aside section>button{
   text-overflow:ellipsis;
   white-space:nowrap
 }
+/* The chat column uses header/content/composer rows and keeps the message region flexible. */
 .chat{
-  display:grid;
-  grid-template-rows:auto 1fr auto;
+  display:flex;
+  flex-direction:column;
   min-width:0;
-  min-height:100vh
+  height:100vh;
+  min-height:0;
+  overflow:hidden
 }
 .chat header{
+  flex:0 0 auto;
   display:flex;
   justify-content:space-between;
   gap:12px;
@@ -157,8 +349,10 @@ aside section>button{
   font-weight:bold
 }
 .messages{
+  flex:1 1 auto;
   width:min(940px,100%);
-  margin:auto;
+  min-height:0;
+  margin:0 auto;
   padding:30px clamp(20px,5vw,64px);
   overflow-y:auto
 }
@@ -170,6 +364,7 @@ aside section>button{
 .empty h2{
   color:#273341
 }
+/* Shared conversation layout; role classes provide user/assistant visual distinction. */
 article{
   display:grid;
   grid-template-columns:34px minmax(0,720px);
@@ -210,6 +405,7 @@ article p{
   border-color:#d2e6e0;
   background:#eaf5f1
 }
+/* Retrieved RAG chunks remain expandable so answers can be checked against their evidence. */
 details{
   margin-top:8px;
   color:#356f62;
@@ -229,7 +425,12 @@ details{
   color:#455563;
   white-space:pre-wrap
 }
+/* Bottom composition area for question entry and request submission. */
 footer{
+  flex:0 0 auto;
+  position:relative;
+  z-index:2;
+  width:100%;
   padding:14px clamp(20px,5vw,64px);
   border-top:1px solid #d9e1e8;
   background:white
@@ -263,12 +464,23 @@ footer button:disabled{
   color:#8c9aa5;
   background:#e3e9ed
 }
+/* Tablet layout stacks the sidebar above chat while retaining two sidebar columns. */
 @media(max-width:780px){
+  html,body,#__next{
+    height:auto;
+    min-height:100%;
+    overflow:auto
+  }
   .app{
-    grid-template-columns:1fr
+    grid-template-columns:1fr;
+    height:auto;
+    max-height:none;
+    overflow:visible
   }
   .sidebar{
-    min-height:auto
+    height:auto;
+    min-height:auto;
+    overflow:visible
   }
   .sidebar-body{
     display:grid;
@@ -278,7 +490,7 @@ footer button:disabled{
     grid-column:1/-1
   }
   .sidebar-toggle{
-    right:14px
+    right:20px
   }
   .is-collapsed{
     grid-template-columns:1fr
@@ -287,12 +499,14 @@ footer button:disabled{
     min-height:60px
   }
   .chat{
+    height:70vh;
     min-height:70vh
   }
   .chat header span{
     display:none
   }
 }
+/* Phone layout collapses all multi-column controls and messages to one readable column. */
 @media(max-width:480px){
   .sidebar-body{
     grid-template-columns:1fr

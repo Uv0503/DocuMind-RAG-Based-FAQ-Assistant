@@ -2,7 +2,7 @@
 
 This backend powers DocuMind, created by Aman Singh Chauhan.
 
-It loads the latest uploaded `.txt` file, chunks the text, embeds chunks with `sentence-transformers`, searches them with FAISS, and sends the top matching chunks to Groq LLaMA for final answer generation. If no upload exists, it uses `context.txt` as the default knowledge base.
+It loads the latest uploaded `.txt` file, chunks the text, embeds chunks with `sentence-transformers`, searches them with FAISS, and sends the top matching chunks to the configured Groq model for final answer generation. If no upload exists, it uses `context.txt` as the default knowledge base.
 
 ## Environment
 
@@ -11,6 +11,8 @@ Create `faq-bot/.env`:
 ```env
 DATABASE_URL=your_supabase_postgres_connection_string
 GROQ_API_KEY=your_groq_api_key
+# Optional; defaults to openai/gpt-oss-20b
+GROQ_MODEL=openai/gpt-oss-20b
 ```
 
 ## Run
@@ -29,7 +31,7 @@ python -m uvicorn main:app --host 0.0.0.0 --port 8888
 - `GET /documents` - returns uploaded document records.
 - `GET /knowledge` - shows the currently active indexed source.
 - `POST /upload` - uploads and indexes a `.txt` knowledge file.
-- `POST /ask` - retrieves relevant chunks, asks Groq LLaMA, logs the interaction, and returns answer plus sources.
+- `POST /ask` - retrieves relevant chunks, asks the configured Groq model, logs the interaction, and returns answer plus sources.
 
 ## Ask Request
 

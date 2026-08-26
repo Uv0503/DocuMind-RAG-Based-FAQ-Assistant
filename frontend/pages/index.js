@@ -1,10 +1,12 @@
 ﻿import { useEffect, useRef, useState } from 'react'
 
+// Browser-visible environment variables must use Next.js's NEXT_PUBLIC_ prefix.
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8888'
 const NETWORK_ERROR =
   'Backend is not reachable. Please make sure FastAPI is running on port 8888.'
 
 function message(role, content, sources = [], loading = false) {
+  // A single message shape supports user messages, pending placeholders, and sourced answers.
   return {
     id: `${Date.now()}-${Math.random()}`,
     role,
@@ -15,11 +17,13 @@ function message(role, content, sources = [], loading = false) {
 }
 
 function apiError(error) {
+  // fetch uses TypeError for transport failures; HTTP failures are normalized by readResponse.
   if (error instanceof TypeError) return NETWORK_ERROR
   return error.message || 'Something went wrong. Please try again.'
 }
 
 async function readResponse(response) {
+  // Keep FastAPI's normal errors and Pydantic validation errors consistent for the UI.
   const body = await response.json().catch(() => ({}))
 
   if (response.ok) return body
@@ -35,6 +39,7 @@ async function readResponse(response) {
 }
 
 export default function Home() {
+  // Local React state is divided into chat, upload, backend status/history, and layout concerns.
   const [messages, setMessages] = useState([])
   const [question, setQuestion] = useState('')
   const [loading, setLoading] = useState(false)
@@ -48,10 +53,20 @@ export default function Home() {
   const [conversations, setConversations] = useState([])
   const [documents, setDocuments] = useState([])
   const [collapsed, setCollapsed] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
+  const [authReady, setAuthReady] = useState(false)
+  const [authMode, setAuthMode] = useState('login')
+  const [authEmail, setAuthEmail] = useState('')
+  const [authPassword, setAuthPassword] = useState('')
+  const [authError, setAuthError] = useState('')
+  const [authLoading, setAuthLoading] = useState(false)
   const fileRef = useRef(null)
   const endRef = useRef(null)
+  const tokenRef = useRef(null)
 
-  const get = async (path) => readResponse(await fetch(API_URL + path))
+  // All read-only API calls pass through the same JSON/error handling path.
+  const authHeaders = () => tokenRef.current ? { Authorization: `Bearer ${tokenRef.current}` } : {}
+  const get = async (path) => readResponse(await fetch(API_URL + path, { headers: authHeaders() }))
 
   const refreshKnowledge = async () => {
     try {
@@ -63,6 +78,7 @@ export default function Home() {
   }
 
   const refreshHistory = async () => {
+    // History calls are independent: one failed service response does not hide the other panel.
     const results = await Promise.allSettled([
       get('/conversations'),
       get('/documents'),
@@ -78,15 +94,39 @@ export default function Home() {
   }
 
   useEffect(() => {
-    refreshKnowledge()
-    refreshHistory()
+    const restoreSession = async () => {
+      const token = window.localStorage.getItem('documind_token')
+      if (!token) {
+        setAuthReady(true)
+        return
+      }
+      tokenRef.current = token
+      try {
+        const data = await get('/auth/me')
+        setCurrentUser(data.user)
+      } catch {
+        window.localStorage.removeItem('documind_token')
+        tokenRef.current = null
+      } finally {
+        setAuthReady(true)
+      }
+    }
+    restoreSession()
   }, [])
 
   useEffect(() => {
+    if (!currentUser) return
+    refreshKnowledge()
+    refreshHistory()
+  }, [currentUser])
+
+  useEffect(() => {
+    // Keep the newest chat message visible whenever the conversation array changes.
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
   const ask = async (event) => {
+    // Optimistic UI: append the question and a temporary assistant row before the API returns.
     event.preventDefault()
 
     const text = question.trim()
@@ -106,12 +146,13 @@ export default function Home() {
     try {
       const response = await fetch(API_URL + '/ask', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ question: text }),
       })
       const data = await readResponse(response)
 
       setMessages((current) =>
+        // Replace only this request's placeholder, preserving every other message.
         current.map((item) =>
           item.id === pending.id
             ? message('assistant', data.answer, data.sources || [])
@@ -130,6 +171,7 @@ export default function Home() {
   }
 
   const onKeyDown = (event) => {
+    // Enter submits like a chat app; Shift+Enter remains available for a newline.
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault()
       event.currentTarget.form.requestSubmit()
@@ -137,12 +179,13 @@ export default function Home() {
   }
 
   const selectFile = (event) => {
+    // Client validation gives immediate feedback; the backend repeats validation for security.
     const file = event.target.files?.[0]
     setUploadMessage('')
 
     if (!file) return
 
-    if (!file.name.endsWith('.txt')) {
+    if (!file.name.toLowerCase().endsWith('.txt')) {
       event.target.value = ''
       setUploadError('Only .txt files are supported.')
       return
@@ -150,6 +193,14 @@ export default function Home() {
 
     setSelectedFile(file)
     setUploadError('')
+  }
+
+  const cancelFile = () => {
+    // Reset both React state and the native input so the same file can be selected again.
+    setSelectedFile(null)
+    setUploadError('')
+    setUploadMessage('')
+    if (fileRef.current) fileRef.current.value = ''
   }
 
   const upload = async () => {
@@ -163,11 +214,13 @@ export default function Home() {
     setUploadMessage('')
 
     try {
+      // Files use multipart FormData, so the browser supplies the correct Content-Type boundary.
       const form = new FormData()
       form.append('file', selectedFile)
 
       const response = await fetch(API_URL + '/upload', {
         method: 'POST',
+        headers: authHeaders(),
         body: form,
       })
       const data = await readResponse(response)
@@ -188,6 +241,7 @@ export default function Home() {
   }
 
   const openHistory = (item) => {
+    // Rehydrate a persisted exchange into the current in-memory chat transcript.
     setMessages((current) => [
       ...current,
       message('user', item.question),
@@ -205,15 +259,71 @@ export default function Home() {
     setChatError('')
   }
 
+  const submitAuth = async (event) => {
+    event.preventDefault()
+    setAuthLoading(true)
+    setAuthError('')
+    try {
+      const response = await fetch(API_URL + `/auth/${authMode}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: authEmail, password: authPassword }),
+      })
+      const data = await readResponse(response)
+      tokenRef.current = data.token
+      window.localStorage.setItem('documind_token', data.token)
+      setCurrentUser(data.user)
+      setAuthPassword('')
+    } catch (error) {
+      setAuthError(apiError(error))
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  const logout = () => {
+    window.localStorage.removeItem('documind_token')
+    tokenRef.current = null
+    setCurrentUser(null)
+    setMessages([])
+    setConversations([])
+    setDocuments([])
+  }
+
+  if (!authReady) return <main className="auth-shell">Checking your session…</main>
+
+  if (!currentUser) {
+    return (
+      <main className="auth-shell">
+        <form className="auth-card" onSubmit={submitAuth}>
+          <div className="auth-brand"><b>DM</b><span>DocuMind</span></div>
+          <h1>{authMode === 'login' ? 'Welcome back' : 'Create your account'}</h1>
+          <p>Sign in to keep your documents and conversations private.</p>
+          <label>Email<input type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} required /></label>
+          <label>Password<input type="password" minLength="8" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} required /></label>
+          {authError && <div className="error">{authError}</div>}
+          <button disabled={authLoading}>{authLoading ? 'Please wait…' : authMode === 'login' ? 'Sign in' : 'Create account'}</button>
+          <button className="auth-switch" type="button" onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthError('') }}>
+            {authMode === 'login' ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
+          </button>
+        </form>
+      </main>
+    )
+  }
+
   return (
+    // The page has two visual regions: a knowledge/history sidebar and the active chat workspace.
     <main className={collapsed ? 'app is-collapsed' : 'app'}>
       <aside className="sidebar">
         <button
           className="sidebar-toggle"
           type="button"
+          aria-label={collapsed ? 'Open sidebar' : 'Close sidebar'}
+          aria-expanded={!collapsed}
+          title={collapsed ? 'Open sidebar' : 'Close sidebar'}
           onClick={() => setCollapsed((value) => !value)}
         >
-          {collapsed ? '>' : '<'}
+          <span aria-hidden="true">{collapsed ? '›' : '‹'}</span>
         </button>
 
         <div className="sidebar-body">
@@ -228,27 +338,60 @@ export default function Home() {
           <button className="new-chat" type="button" onClick={newChat}>
             + New Chat
           </button>
+          <button className="account-button" type="button" onClick={logout} title="Sign out">
+            {currentUser.email}<span>Sign out</span>
+          </button>
 
-          <section>
+          {/* Upload controls activate a new backend knowledge source. */}
+          <section className="knowledge-upload">
             <label>Knowledge file</label>
             <input
               ref={fileRef}
+              id="knowledge-file"
+              className="file-input"
               type="file"
               accept=".txt"
               onChange={selectFile}
             />
-            <p>{selectedFile?.name || 'Choose a .txt file'}</p>
-            <button
-              type="button"
-              onClick={upload}
-              disabled={!selectedFile || uploading}
-            >
-              {uploading ? 'Uploading...' : 'Upload document'}
-            </button>
+            {!selectedFile ? (
+              <label className="file-picker" htmlFor="knowledge-file">
+                <span className="file-picker-icon" aria-hidden="true">↑</span>
+                <span>
+                  <strong>Choose a file</strong>
+                  <small>TXT documents only</small>
+                </span>
+              </label>
+            ) : (
+              <div className="file-selection" aria-live="polite">
+                <div className="file-selection-name">
+                  <span className="file-check" aria-hidden="true">✓</span>
+                  <span title={selectedFile.name}>{selectedFile.name}</span>
+                </div>
+                <div className="file-actions">
+                  <button
+                    className="upload-action"
+                    type="button"
+                    onClick={upload}
+                    disabled={uploading}
+                  >
+                    {uploading ? 'Uploading...' : 'Upload document'}
+                  </button>
+                  <button
+                    className="cancel-action"
+                    type="button"
+                    onClick={cancelFile}
+                    disabled={uploading}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
             {uploadError && <em className="error">{uploadError}</em>}
             {uploadMessage && <em className="success">{uploadMessage}</em>}
           </section>
 
+          {/* Knowledge status reports the backend index, not merely the selected browser file. */}
           <section>
             <label>Knowledge status</label>
             {knowledgeError ? (
@@ -261,6 +404,7 @@ export default function Home() {
             )}
           </section>
 
+          {/* These panels are backed by PostgreSQL and remain empty when persistence is unavailable. */}
           <section className="history-panel">
             <label>Recent questions</label>
             <div>
@@ -319,6 +463,7 @@ export default function Home() {
             </div>
           )}
 
+          {/* Sources are rendered beside each completed assistant answer for auditability. */}
           {messages.map((item) => (
             <article className={item.role} key={item.id}>
               <b>{item.role === 'user' ? 'You' : 'AI'}</b>

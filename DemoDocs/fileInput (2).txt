@@ -1,0 +1,12 @@
+What is abstract class?
+
+A class that has at least one pure virtual function is called an abstract class.
+
+So this class:
+
+class Account {
+public:
+    virtual void withdraw(double amount) = 0;
+};
+
+is an abstract class.

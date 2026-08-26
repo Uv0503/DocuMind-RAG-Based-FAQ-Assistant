@@ -1,11 +1,17 @@
+# Generation layer: converts retrieved evidence into a natural-language answer through Groq.
+# Retrieval deliberately happens elsewhere so this module never chooses its own knowledge.
 import os
 from typing import Dict, List
 
 from dotenv import load_dotenv
-from groq import Groq
+from groq import APIConnectionError, APIStatusError, Groq
 
 
 load_dotenv()
+
+
+# Keep the provider model configurable because Groq periodically retires model IDs.
+DEFAULT_MODEL = "openai/gpt-oss-20b"
 
 
 def _get_groq_client() -> Groq:
@@ -41,10 +47,19 @@ def answer_question(question: str, sources: List[Dict]) -> str:
         },
     ]
 
-    # Groq LLaMA generates the final user-facing answer from the retrieved context.
-    resp = _get_groq_client().chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=messages,
-        stream=False,
-    )
+    # Groq generates the final user-facing answer from the retrieved context.
+    model = os.getenv("GROQ_MODEL", DEFAULT_MODEL)
+    try:
+        resp = _get_groq_client().chat.completions.create(
+            model=model,
+            messages=messages,
+            stream=False,
+        )
+    except APIConnectionError as exc:
+        raise RuntimeError("Could not connect to the Groq API") from exc
+    except APIStatusError as exc:
+        provider_message = str(exc.body.get("error", {}).get("message", "")).strip()
+        detail = provider_message or f"Groq API request failed with status {exc.status_code}"
+        raise RuntimeError(detail) from exc
+
     return resp.choices[0].message.content.strip()

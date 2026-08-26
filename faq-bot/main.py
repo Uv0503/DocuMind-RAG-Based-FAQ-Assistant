@@ -1,18 +1,27 @@
+# API composition root: this module wires HTTP routes to the RAG, model, and database layers.
+# Request flow: Next.js client -> FastAPI validation -> retrieval/model work -> JSON response.
+import asyncio
 import os
 from datetime import datetime
 from typing import List, Optional
 
 import uvicorn
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from db import db, ensure_schema, fetch_conversations, fetch_documents, log_document, log_interaction
+from db import (create_session, create_user, db, ensure_schema, fetch_conversations,
+                fetch_documents, find_session_user, find_user_by_email, log_document,
+                log_interaction, verify_password)
 from model import answer_question
 from rag import rag_index, save_uploaded_text
+
+
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 # Single fallback used when no knowledge has been indexed yet.
@@ -21,20 +30,22 @@ FALLBACK_ANSWER = "OOPS!!😥 I could not find enough information in the uploade
 # FastAPI metadata appears in Swagger at /docs.
 app = FastAPI(
     title="DocuMind - RAG-Based FAQ Assistant",
-    description="DocuMind, created by Aman Singh Chauhan. A RAG-based FAQ assistant powered by FastAPI, FAISS, and Groq LLaMA",
+    description="DocuMind, created by Aman Singh Chauhan. A RAG-based FAQ assistant powered by FastAPI, FAISS, and the Groq API",
     contact={
         "name": "Aman Singh Chauhan",
         "email": "picture0503@gmail.com",
     },
 )
 
-# Allow the local Next.js frontend and deployed frontend to call this API from the browser.
+# Allow local development plus deployment origins configured as a comma-separated list.
+configured_origins = [
+    origin.strip()
+    for origin in os.getenv("FRONTEND_URL", "https://llm-faq-bot.vercel.app").split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://llm-faq-bot.vercel.app",
-    ],
+    allow_origins=["http://localhost:3000", *configured_origins],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,6 +66,37 @@ class AskRequest(BaseModel):
             raise ValueError("Question cannot be empty")
         return value.strip()
 
+class Credentials(BaseModel):
+    email: str = Field(..., min_length=3, max_length=254)
+    password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        email = value.strip().lower()
+        if "@" not in email or email.startswith("@") or email.endswith("@"):
+            raise ValueError("Enter a valid email address")
+        return email
+
+
+class AuthResponse(BaseModel):
+    token: str
+    user: dict
+
+
+async def current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Sign in is required")
+    try:
+        user = await find_session_user(credentials.credentials)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Authentication database is unavailable") from exc
+    if user is None:
+        raise HTTPException(status_code=401, detail="Your session has expired. Please sign in again")
+    return dict(user)
+
+
+# Response schemas document the public API contract and are also exposed in /docs.
 class Source(BaseModel):
     # Source chunks are returned with every grounded answer so users can inspect the evidence.
     chunk_id: int
@@ -101,9 +143,15 @@ async def startup():
     # Build the vector index once at startup so the first question is ready to retrieve context.
     rag_index.rebuild()
     if db is not None:
-        await db.connect()
-        await ensure_schema()
-        print("Connected to the database successfully.")
+        try:
+            # Managed Postgres services can take several seconds to wake up and run
+            # the initial schema checks. Keep the API startup resilient to that latency.
+            db_timeout = float(os.getenv("DATABASE_STARTUP_TIMEOUT", "30"))
+            await asyncio.wait_for(db.connect(), timeout=db_timeout)
+            await ensure_schema()
+            print("Connected to the database successfully.")
+        except Exception as exc:
+            print(f"Database unavailable. Database features are disabled: {exc}")
     else:
         print("DATABASE_URL is not configured. Database features are disabled.")
 
@@ -111,7 +159,7 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
     # Close the database connection cleanly when the API server stops.
-    if db is not None:
+    if db is not None and db.is_connected:
         await db.disconnect()
 
 
@@ -124,8 +172,8 @@ def root():
 @app.get("/health/db", response_model=List[str])
 async def health_db():
     # Quick database check used during local setup and demos.
-    if db is None:
-        raise HTTPException(status_code=500, detail="DATABASE_URL is not configured")
+    if db is None or not db.is_connected:
+        raise HTTPException(status_code=503, detail="Database is not connected")
 
     rows = await db.fetch_all(
         "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
@@ -133,21 +181,52 @@ async def health_db():
     return [r["table_name"] for r in rows]
 
 
+@app.post("/auth/register", response_model=AuthResponse, status_code=201)
+async def register(credentials: Credentials):
+    try:
+        user = await create_user(credentials.email, credentials.password)
+        token = await create_session(user["id"])
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Authentication database is unavailable") from exc
+    return {"token": token, "user": {"id": user["id"], "email": user["email"]}}
+
+
+@app.post("/auth/login", response_model=AuthResponse)
+async def login(credentials: Credentials):
+    try:
+        user = await find_user_by_email(credentials.email)
+        if user is None or not verify_password(credentials.password, user["password_hash"]):
+            raise HTTPException(status_code=401, detail="Incorrect email or password")
+        token = await create_session(user["id"])
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Authentication database is unavailable") from exc
+    return {"token": token, "user": {"id": user["id"], "email": user["email"]}}
+
+
+@app.get("/auth/me")
+async def get_me(user: dict = Depends(current_user)):
+    return {"user": user}
+
+
 @app.get("/conversations", response_model=List[Conversation])
-async def list_conversations():
+async def list_conversations(user: dict = Depends(current_user)):
     # Return stored question/answer history from Postgres.
     try:
-        rows = await fetch_conversations()
+        rows = await fetch_conversations(user["id"])
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
     return [dict(r) for r in rows]
 
 
 @app.get("/documents", response_model=List[DocumentRecord])
-async def list_documents():
+async def list_documents(user: dict = Depends(current_user)):
     # Return uploaded document history from Postgres.
     try:
-        return await fetch_documents()
+        return await fetch_documents(user["id"])
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
@@ -162,14 +241,16 @@ async def knowledge_status():
 
 
 @app.post("/ask", response_model=Answer)
-async def ask(query: AskRequest):
+async def ask(query: AskRequest, user: dict = Depends(current_user)):
+    # This endpoint is the RAG orchestration boundary: retrieve first, generate second,
+    # then persist the evidence and result for later inspection.
     # Retrieve the most relevant chunks before calling the LLM.
     sources = rag_index.retrieve(query.question, top_k=3)
 
     # If no documents exist or no chunks pass the relevance threshold, return and log the fallback.
     if not sources:
         try:
-            await log_interaction(query.question, "", FALLBACK_ANSWER, [])
+            await log_interaction(user["id"], query.question, "", FALLBACK_ANSWER, [])
         except Exception as exc:
             raise HTTPException(status_code=500, detail=f"Database write failed: {exc}")
         return {"answer": FALLBACK_ANSWER, "sources": []}
@@ -184,7 +265,7 @@ async def ask(query: AskRequest):
     context = "\n\n".join(source["text"] for source in sources)
 
     try:
-        # Groq generates the final answer using only the retrieved source chunks.
+        # The configured Groq model generates the final answer using only the retrieved source chunks.
         answer = answer_question(query.question, sources)
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
@@ -196,7 +277,7 @@ async def ask(query: AskRequest):
 
     try:
         # Log both the answer and its source context in Postgres.
-        await log_interaction(query.question, context, answer, public_sources)
+        await log_interaction(user["id"], query.question, context, answer, public_sources)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Database write failed: {exc}")
 
@@ -204,7 +285,8 @@ async def ask(query: AskRequest):
 
 
 @app.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(file: UploadFile = File(...), user: dict = Depends(current_user)):
+    # Uploads arrive as multipart/form-data rather than JSON because they contain file bytes.
     # Keep upload scope narrow: .txt only.
     if not file.filename or not file.filename.lower().endswith(".txt"):
         raise HTTPException(status_code=400, detail="Only .txt files are supported")
@@ -215,7 +297,7 @@ async def upload_document(file: UploadFile = File(...)):
         text = content.decode("utf-8").strip()
         chunks_created = save_uploaded_text(file.filename, content)
         rag_index.rebuild()
-        await log_document(file.filename, text, chunks_created)
+        await log_document(user["id"], file.filename, text, chunks_created)
     except UnicodeDecodeError:
         raise HTTPException(status_code=400, detail="Uploaded file must be valid UTF-8 text")
     except ValueError as exc:

@@ -8,6 +8,7 @@ __pycache__/
 *.log
 .zip
 faq-bot/uploaded_docs/
+evaluation/
 
 # Environment variables
 .env

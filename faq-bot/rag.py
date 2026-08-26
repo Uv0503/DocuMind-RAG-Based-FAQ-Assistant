@@ -1,9 +1,13 @@
+# Retrieval layer: owns the active knowledge document, chunk metadata, embeddings, and search index.
+# The index is process-local memory; uploaded text on disk is what allows it to be rebuilt at startup.
 import os
+import re
+from collections import Counter
+from math import sqrt
 from pathlib import Path
 from typing import Dict, List
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 try:
     # FAISS is used when available. On Windows, the package may not install, so the code falls back to NumPy search.
@@ -23,9 +27,16 @@ class RAGIndex:
     def __init__(
         self,
         model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
-        chunk_size: int = 700,
-        chunk_overlap: int = 120,
+        chunk_size: int = 1000,
+        chunk_overlap: int = 150,
     ):
+        if chunk_size <= 0:
+            raise ValueError("chunk_size must be greater than zero")
+        if chunk_overlap < 0:
+            raise ValueError("chunk_overlap cannot be negative")
+        if chunk_overlap >= chunk_size:
+            raise ValueError("chunk_overlap must be smaller than chunk_size")
+
         self.model_name = model_name
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
@@ -33,11 +44,17 @@ class RAGIndex:
         self.index = None
         self.embeddings = None
         self.chunks: List[Dict] = []
+        self.is_built = False
 
     def _load_model(self):
         # Load lazily so importing the API does not immediately download/load the embedding model.
         if self.model is None:
-            self.model = SentenceTransformer(self.model_name)
+            if os.getenv("USE_EMBEDDINGS", "true").lower() != "true":
+                raise RuntimeError("Embeddings are disabled; using lexical retrieval")
+            from sentence_transformers import SentenceTransformer
+
+            allow_download = os.getenv("ALLOW_MODEL_DOWNLOAD", "true").lower() == "true"
+            self.model = SentenceTransformer(self.model_name, local_files_only=not allow_download)
         return self.model
 
     def split_text(self, text: str) -> List[str]:
@@ -83,9 +100,13 @@ class RAGIndex:
 
         return documents
 
-    def rebuild(self) -> int:
-        # Rebuild the in-memory vector index after startup or every successful upload.
-        documents = self.load_documents()
+    def build_from_documents(self, documents: List[Dict[str, str]]) -> int:
+        """Build the index from explicit documents without touching uploaded files.
+
+        The evaluation framework uses this public seam to exercise the same chunking,
+        embedding, and vector-search code as the API. Each document must contain a
+        ``source`` filename and its decoded ``text``.
+        """
         self.chunks = []
 
         chunk_id = 1
@@ -101,15 +122,25 @@ class RAGIndex:
         if not self.chunks:
             self.index = None
             self.embeddings = None
+            self.is_built = True
             return 0
 
         # Normalized embeddings let inner product behave like cosine similarity.
-        model = self._load_model()
-        embeddings = model.encode(
-            [chunk["text"] for chunk in self.chunks],
-            convert_to_numpy=True,
-            normalize_embeddings=True,
-        ).astype("float32")
+        try:
+            model = self._load_model()
+            embeddings = model.encode(
+                [chunk["text"] for chunk in self.chunks],
+                convert_to_numpy=True,
+                normalize_embeddings=True,
+            ).astype("float32")
+        except Exception as exc:
+            # Keep the API available when the model is not cached and Hugging Face is offline.
+            print(f"Embedding model unavailable; using lexical retrieval: {exc}")
+            self.model = None
+            self.index = None
+            self.embeddings = None
+            self.is_built = True
+            return len(self.chunks)
 
         self.embeddings = embeddings
         if faiss is not None:
@@ -119,15 +150,50 @@ class RAGIndex:
         else:
             # NumPy fallback keeps local Windows development working without FAISS.
             self.index = None
+        self.is_built = True
         return len(self.chunks)
+
+    def rebuild(self) -> int:
+        # Rebuild the production index from the latest uploaded document.
+        return self.build_from_documents(self.load_documents())
+
+    @staticmethod
+    def _term_counts(text: str) -> Counter:
+        return Counter(re.findall(r"[a-z0-9]+", text.lower()))
+
+    def _lexical_retrieve(self, question: str, top_k: int) -> List[Dict]:
+        # This dependency-free fallback compares normalized word-frequency vectors.
+        # It keeps exact-word retrieval working when the semantic embedding model is unavailable.
+        query = self._term_counts(question)
+        query_norm = sqrt(sum(value * value for value in query.values()))
+        if not query_norm:
+            return []
+
+        scored = []
+        for chunk in self.chunks:
+            terms = self._term_counts(chunk["text"])
+            term_norm = sqrt(sum(value * value for value in terms.values()))
+            if not term_norm:
+                continue
+            score = sum(query[word] * terms.get(word, 0) for word in query) / (query_norm * term_norm)
+            if score > 0:
+                scored.append((score, chunk))
+
+        return [
+            {**chunk, "score": round(float(score), 4)}
+            for score, chunk in sorted(scored, key=lambda item: item[0], reverse=True)[:top_k]
+        ]
 
     def retrieve(self, question: str, top_k: int = 3, min_score: float = 0.10) -> List[Dict]:
         # Build the index on first use if startup did not already do it.
-        if self.embeddings is None or not self.chunks:
+        if not self.is_built:
             self.rebuild()
 
-        if self.embeddings is None or not self.chunks:
+        if not self.chunks:
             return []
+
+        if self.embeddings is None:
+            return self._lexical_retrieve(question, top_k)
 
         model = self._load_model()
         query_embedding = model.encode(
@@ -194,4 +260,5 @@ def save_uploaded_text(filename: str, content: bytes) -> int:
 
 
 # Shared singleton used by FastAPI routes.
+# All requests handled by this Python process therefore see the same active index.
 rag_index = RAGIndex()

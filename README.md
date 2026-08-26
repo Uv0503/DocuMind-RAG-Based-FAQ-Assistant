@@ -7,7 +7,7 @@
 ## Features
 
 - Upload and index a `.txt` knowledge document
-- Generate grounded answers with Groq LLaMA
+- Generate grounded answers with a Groq-hosted LLM
 - Retrieve relevant document chunks with semantic search
 - Show the source chunks used for every answer
 - Save conversation history and uploaded-document metadata in Supabase/PostgreSQL
@@ -17,13 +17,13 @@
 ## How it works
 
 ```text
-TXT document -> chunking -> embeddings -> vector search -> relevant chunks -> Groq LLaMA -> answer + sources
+TXT document -> chunking -> embeddings -> vector search -> relevant chunks -> Groq LLM -> answer + sources
 ```
 
 1. A `.txt` document is uploaded through the Next.js interface.
 2. The backend splits it into overlapping chunks and generates embeddings with `sentence-transformers`.
 3. FAISS (or the Windows NumPy fallback) identifies the chunks most relevant to the question.
-4. Those chunks are sent to Groq LLaMA with the user's question.
+4. Those chunks are sent to the configured Groq model with the user's question.
 5. The answer and its sources are returned to the UI and saved to PostgreSQL.
 
 > Each new upload replaces the currently active knowledge document, keeping answers tied to the latest file.
@@ -35,7 +35,7 @@ TXT document -> chunking -> embeddings -> vector search -> relevant chunks -> Gr
 | Frontend | Next.js, React, Tailwind CSS |
 | Backend | FastAPI, Uvicorn |
 | RAG | Sentence Transformers, FAISS, NumPy |
-| LLM | Groq LLaMA |
+| LLM | Groq API (configurable model) |
 | Database | Supabase PostgreSQL |
 
 ## Project structure
@@ -71,6 +71,8 @@ Create `faq-bot/.env`:
 ```env
 DATABASE_URL=your_supabase_postgres_connection_string
 GROQ_API_KEY=your_groq_api_key
+# Optional; defaults to openai/gpt-oss-20b
+GROQ_MODEL=openai/gpt-oss-20b
 ```
 
 Install and start the API:

@@ -1,0 +1,43 @@
+SwiftCart is a demo e-commerce platform built for testing an LLM FAQ bot.
+
+The frontend of SwiftCart is built using Next.js. The backend is built using FastAPI. The database used by the application is PostgreSQL, hosted on Supabase.
+
+SwiftCart allows users to browse products, search by category, add items to cart, and place demo orders. The platform currently supports three product categories: electronics, books, and fashion.
+
+User authentication in SwiftCart is handled using JWT tokens. When a user logs in successfully, the backend generates a token and the frontend stores it temporarily for authenticated API requests.
+
+The payment system in SwiftCart is only a mock payment flow. No real money is processed. The mock payment flow marks an order as successful after basic validation.
+
+Order details are stored in the orders table. Each order contains the user id, product ids, total amount, payment status, and created timestamp.
+
+The admin panel allows admins to add new products, update product prices, disable unavailable products, and view recent orders.
+
+SwiftCart sends order confirmation emails after successful checkout. Email sending is handled by a background task so that the API response is not delayed.
+
+The application uses rate limiting on important APIs such as login, checkout, and product search. This helps prevent abuse and protects backend resources.
+
+The search feature supports partial product name matching. For example, searching for "phone" can return products like "Smartphone Pro" and "Wireless Phone Charger".
+
+SwiftCart uses Redis caching for frequently viewed product details. This reduces database load and improves response time for popular products.
+
+Application logs are stored using a structured logging format. Each log contains timestamp, request id, API path, response status, and execution time.
+
+The project is deployed with the frontend on Vercel and the backend on Render. Supabase is used for the PostgreSQL database.
+
+The main goal of SwiftCart is to demonstrate a full-stack e-commerce workflow with authentication, product management, cart handling, order placement, mock payments, and conversation-based FAQ support.
+
+The LLM FAQ bot answers questions only from the provided knowledge base. It does not search the internet. If the answer is not available in the context, the bot should say that it does not have enough information.
+
+For better answer quality, the FAQ bot uses document chunking, embeddings, vector search, and Groq LLaMA. The system retrieves relevant chunks from the knowledge base and sends them to the LLaMA model to generate a grounded response.
+
+Conversation history is stored in the conversations table. Each record contains the session id, user question, matched context, generated response, source chunks, and created timestamp.
+
+The project uses environment variables for sensitive configuration. DATABASE_URL is used for the Supabase PostgreSQL connection, and GROQ_API_KEY is used to call the Groq LLaMA API.
+
+The backend exposes the following important APIs: GET /health/db, GET /conversations, POST /upload, and POST /ask.
+
+The /health/db API checks whether the backend can connect to the PostgreSQL database. The /conversations API returns saved chat history. The /upload API allows uploading a text document. The /ask API accepts a user question and returns an answer with source chunks.
+
+Invalid questions shorter than three characters should be rejected. Uploaded files should be limited to text files. Wrong file types should return a validation error.
+
+A future improvement for SwiftCart is to add role-based access control for admin APIs. Another planned improvement is to add real payment gateway integration using Razorpay or Stripe.
