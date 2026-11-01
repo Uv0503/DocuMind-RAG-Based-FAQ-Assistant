@@ -1,0 +1,208 @@
+{
+  "seed": 20261009,
+  "chunk_size": 128,
+  "chunk_overlap": 26,
+  "development_sources": [
+    "employee_handbook.txt",
+    "security_policy.txt",
+    "travel_policy.txt",
+    "demo_abs.txt",
+    "demo_fileInput (2).txt",
+    "demo_random.txt"
+  ],
+  "development_chunks": 18,
+  "development": {
+    "bm25": {
+      "answerable": 30,
+      "unanswerable": 2,
+      "recall_at_5": 0.9666666666666667,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 0.9083333333333333,
+      "ndcg_at_10": 0.9191486508238408,
+      "unanswerable_empty_rate": 0,
+      "latency_p50_ms": 0.03928399928554427,
+      "latency_p95_ms": 0.05186599992157426
+    },
+    "dense": {
+      "answerable": 30,
+      "unanswerable": 2,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 0.9111111111111111,
+      "ndcg_at_10": 0.9273551706257356,
+      "unanswerable_empty_rate": 0,
+      "latency_p50_ms": 6.328079000013531,
+      "latency_p95_ms": 7.726138999714749
+    },
+    "hybrid_rrf": {
+      "answerable": 30,
+      "unanswerable": 2,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 0.9777777777777777,
+      "ndcg_at_10": 0.9806573596382729,
+      "unanswerable_empty_rate": 0,
+      "latency_p50_ms": 5.9829549991263775,
+      "latency_p95_ms": 6.7174870000599185
+    },
+    "hybrid_sparse2": {
+      "answerable": 30,
+      "unanswerable": 2,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 0.9583333333333334,
+      "ndcg_at_10": 0.9581168615587743,
+      "unanswerable_empty_rate": 0,
+      "latency_p50_ms": 6.355757999699563,
+      "latency_p95_ms": 7.253050000144867
+    },
+    "hybrid_rerank_full": {
+      "answerable": 30,
+      "unanswerable": 2,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 0.961111111111111,
+      "ndcg_at_10": 0.9710309917857153,
+      "unanswerable_empty_rate": 0,
+      "latency_p50_ms": 431.2676490008016,
+      "latency_p95_ms": 468.84069699990505
+    },
+    "hybrid_rerank_fast": {
+      "answerable": 30,
+      "unanswerable": 2,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 0.961111111111111,
+      "ndcg_at_10": 0.9710309917857153,
+      "unanswerable_empty_rate": 0,
+      "latency_p50_ms": 174.0076300011424,
+      "latency_p95_ms": 199.67050299965194
+    },
+    "hybrid_sparse2_rerank_fast": {
+      "answerable": 30,
+      "unanswerable": 2,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 0.961111111111111,
+      "ndcg_at_10": 0.9710309917857153,
+      "unanswerable_empty_rate": 0,
+      "latency_p50_ms": 182.83859599978314,
+      "latency_p95_ms": 207.3688359996595
+    }
+  },
+  "selection_rule": "best dev Recall@5; within 0.015 of best MRR@10; then minimum p95 latency",
+  "selected_method": "hybrid_rrf",
+  "versions": {
+    "python": "3.11.16",
+    "numpy": "2.4.6",
+    "faiss": "1.15.1",
+    "torch": "2.14.1+cpu",
+    "sentence_transformers": "5.7.0"
+  },
+  "hardware": {
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu_count": 12,
+    "faiss_threads": 1
+  },
+  "test_sources": [
+    "east_library.txt",
+    "west_library.txt",
+    "harbor_rail.txt",
+    "bay_ferry.txt",
+    "oakview_housing.txt",
+    "pinecrest_housing.txt",
+    "museum_care.txt",
+    "river_monitoring.txt"
+  ],
+  "test_chunks": 22,
+  "test": {
+    "bm25": {
+      "answerable": 25,
+      "unanswerable": 4,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 0.9033333333333333,
+      "ndcg_at_10": 0.9212791057405073,
+      "unanswerable_empty_rate": 0,
+      "latency_p50_ms": 0.08365299981960561,
+      "latency_p95_ms": 0.11106199963251129
+    },
+    "dense": {
+      "answerable": 25,
+      "unanswerable": 4,
+      "recall_at_5": 0.96,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 0.9057142857142857,
+      "ndcg_at_10": 0.9190959205111806,
+      "unanswerable_empty_rate": 0,
+      "latency_p50_ms": 6.899010000779526,
+      "latency_p95_ms": 7.79900700035796
+    },
+    "hybrid_rrf": {
+      "answerable": 25,
+      "unanswerable": 4,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 0.888,
+      "ndcg_at_10": 0.9100005359926698,
+      "unanswerable_empty_rate": 0,
+      "latency_p50_ms": 6.63700999939465,
+      "latency_p95_ms": 7.091460000083316
+    },
+    "hybrid_sparse2": {
+      "answerable": 25,
+      "unanswerable": 4,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 0.9079999999999999,
+      "ndcg_at_10": 0.9279745142838841,
+      "unanswerable_empty_rate": 0,
+      "latency_p50_ms": 6.494889999885345,
+      "latency_p95_ms": 7.292514001164818
+    },
+    "hybrid_rerank_full": {
+      "answerable": 25,
+      "unanswerable": 4,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 0.93,
+      "ndcg_at_10": 0.9412791057405073,
+      "unanswerable_empty_rate": 0,
+      "latency_p50_ms": 419.41720800059556,
+      "latency_p95_ms": 440.8900190010172
+    },
+    "hybrid_rerank_fast": {
+      "answerable": 25,
+      "unanswerable": 4,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 0.93,
+      "ndcg_at_10": 0.9412791057405073,
+      "unanswerable_empty_rate": 0,
+      "latency_p50_ms": 162.11505100000068,
+      "latency_p95_ms": 168.45303300033265
+    },
+    "hybrid_sparse2_rerank_fast": {
+      "answerable": 25,
+      "unanswerable": 4,
+      "recall_at_5": 1.0,
+      "recall_at_10": 1.0,
+      "mrr_at_10": 0.93,
+      "ndcg_at_10": 0.9412791057405073,
+      "unanswerable_empty_rate": 0,
+      "latency_p50_ms": 162.21319800024503,
+      "latency_p95_ms": 176.13673199957702
+    }
+  },
+  "previous_production": {
+    "answerable": 25,
+    "unanswerable": 4,
+    "recall_at_5": 1.0,
+    "recall_at_10": 1.0,
+    "mrr_at_10": 0.96,
+    "ndcg_at_10": 0.9704743802857166,
+    "unanswerable_empty_rate": 0,
+    "latency_p50_ms": 0.03911700150638353,
+    "latency_p95_ms": 0.0807270007499028
+  }
+}

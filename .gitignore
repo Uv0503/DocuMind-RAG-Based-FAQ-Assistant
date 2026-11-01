@@ -9,6 +9,22 @@ __pycache__/
 .zip
 faq-bot/uploaded_docs/
 evaluation/
+!evaluation/
+evaluation/*
+!evaluation/benchmark_advanced.py
+!evaluation/advanced_results.json
+!evaluation/advanced_methodology.md
+!evaluation/realistic_benchmark.py
+!evaluation/realistic_corpus.py
+!evaluation/realistic_results.json
+!evaluation/realistic_results_before_filter.json
+!evaluation/validate_grounding.py
+!evaluation/grounding_results.json
+!evaluation/eval_dataset.json
+!evaluation/documents/
+!evaluation/documents/*.txt
+evaluation/.cache/
+faq-bot/.rag_cache/
 
 # Environment variables
 .env

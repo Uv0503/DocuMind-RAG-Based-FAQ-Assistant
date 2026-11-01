@@ -1,5 +1,6 @@
 # Persistence layer: provides optional PostgreSQL history without coupling RAG availability to the DB.
 # When no live connection exists, logging/list operations degrade gracefully to no-ops or empty lists.
+import asyncio
 import os
 import json
 import hashlib
@@ -15,18 +16,30 @@ load_dotenv()
 # Database URL comes from .env so secrets are never placed in frontend code.
 DATABASE_URL = os.getenv("DATABASE_URL")
 db = Database(DATABASE_URL) if DATABASE_URL else None
+_db_connect_lock = asyncio.Lock()
 
 
-def require_db() -> Database:
-    # Central guard gives every DB caller the same clear error when DATABASE_URL is missing.
-    if db is None or not db.is_connected:
-        raise RuntimeError("Database is not connected")
+async def require_db() -> Database:
+    """Return a live database connection, reconnecting after transient outages.
+
+    Render and Supabase can independently sleep or recycle connections. A failed
+    startup connection must therefore not leave authentication disabled until the
+    next application restart.
+    """
+    if db is None:
+        raise RuntimeError("DATABASE_URL is not configured")
+
+    if not db.is_connected:
+        async with _db_connect_lock:
+            if not db.is_connected:
+                timeout = float(os.getenv("DATABASE_STARTUP_TIMEOUT", "30"))
+                await asyncio.wait_for(db.connect(), timeout=timeout)
     return db
 
 
 async def ensure_schema():
     # Create or update the small tables needed for the demo when the API starts.
-    database = require_db()
+    database = await require_db()
     await database.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -93,7 +106,7 @@ def hash_token(token: str) -> str:
 
 
 async def create_user(email: str, password: str):
-    database = require_db()
+    database = await require_db()
     existing = await database.fetch_one("SELECT id FROM users WHERE email = :email", {"email": email})
     if existing:
         raise ValueError("An account with this email already exists")
@@ -104,12 +117,12 @@ async def create_user(email: str, password: str):
 
 
 async def find_user_by_email(email: str):
-    return await require_db().fetch_one("SELECT id, email, password_hash FROM users WHERE email = :email", {"email": email})
+    return await (await require_db()).fetch_one("SELECT id, email, password_hash FROM users WHERE email = :email", {"email": email})
 
 
 async def create_session(user_id: int):
     token = secrets.token_urlsafe(32)
-    await require_db().execute(
+    await (await require_db()).execute(
         "INSERT INTO user_sessions(user_id, token_hash, expires_at) VALUES(:user_id, :token_hash, NOW() + INTERVAL '7 days')",
         {"user_id": user_id, "token_hash": hash_token(token)},
     )
@@ -117,7 +130,7 @@ async def create_session(user_id: int):
 
 
 async def find_session_user(token: str):
-    return await require_db().fetch_one(
+    return await (await require_db()).fetch_one(
         """SELECT users.id, users.email FROM user_sessions
            JOIN users ON users.id = user_sessions.user_id
            WHERE user_sessions.token_hash = :token_hash AND user_sessions.expires_at > NOW()""",
@@ -133,13 +146,13 @@ async def log_interaction(
     sources: List[dict],
 ):
     # Store the question, final answer, retrieved context, and source chunks for interview/demo review.
-    if db is None or not db.is_connected:
+    if db is None:
         return
     query = """
     INSERT INTO conversations(user_id, question, context, response, sources)
     VALUES(:user_id, :question, :context, :response, CAST(:sources AS JSONB))
     """
-    await require_db().execute(query=query, values={
+    await (await require_db()).execute(query=query, values={
         "user_id": user_id,
         "question": question,
         "context": context,
@@ -150,13 +163,13 @@ async def log_interaction(
 
 async def log_document(user_id: int, filename: str, content: str, chunks_created: int):
     # Keep an upload history in Postgres while the active RAG file stays on disk.
-    if db is None or not db.is_connected:
+    if db is None:
         return
     query = """
     INSERT INTO documents(user_id, filename, content, chunks_created)
     VALUES(:user_id, :filename, :content, :chunks_created)
     """
-    await require_db().execute(query=query, values={
+    await (await require_db()).execute(query=query, values={
         "user_id": user_id,
         "filename": filename,
         "content": content,
@@ -166,9 +179,9 @@ async def log_document(user_id: int, filename: str, content: str, chunks_created
 
 async def fetch_documents(user_id: int):
     # Return metadata only; full document text stays in the table for inspection if needed.
-    if db is None or not db.is_connected:
+    if db is None:
         return []
-    rows = await require_db().fetch_all(
+    rows = await (await require_db()).fetch_all(
         "SELECT id, filename, chunks_created, created_at FROM documents WHERE user_id = :user_id ORDER BY created_at DESC",
         {"user_id": user_id},
     )
@@ -177,9 +190,9 @@ async def fetch_documents(user_id: int):
 
 async def fetch_conversations(user_id: int):
     # Newest interactions first makes the history easier to inspect in the UI or Swagger.
-    if db is None or not db.is_connected:
+    if db is None:
         return []
-    rows = await require_db().fetch_all("SELECT * FROM conversations WHERE user_id = :user_id ORDER BY created_at DESC", {"user_id": user_id})
+    rows = await (await require_db()).fetch_all("SELECT * FROM conversations WHERE user_id = :user_id ORDER BY created_at DESC", {"user_id": user_id})
 
     conversations = []
     for row in rows:

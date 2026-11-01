@@ -1,0 +1,16 @@
+Northstar Labs Information Security Policy
+
+Passwords and authentication
+Every company account must use a password containing at least 14 characters. Multi-factor authentication is mandatory for email, source-code hosting, cloud infrastructure, and administrative systems. Passwords must not be shared through chat messages, email, or support tickets.
+
+Security incidents
+Employees must report a suspected security incident to the security team within one hour of discovery. Examples include a lost company device, unexpected multi-factor prompts, exposed credentials, and confidential information sent to the wrong recipient. Employees should preserve relevant evidence and avoid attempting their own forensic investigation.
+
+Data classification
+Company information is classified as public, internal, confidential, or restricted. Restricted data includes authentication secrets, private encryption keys, and regulated customer records. Restricted data may only be stored in explicitly approved systems and must be encrypted both in transit and at rest.
+
+Device protection
+Company laptops must use full-disk encryption and automatically lock after ten minutes of inactivity. Operating-system security updates must be installed within seven days of release. A lost or stolen device must be reported immediately so remote protection measures can be started.
+
+Vendor access
+Third-party access must have a named internal owner, a documented business purpose, and an expiration date. Vendor permissions must follow the principle of least privilege and must be reviewed every quarter.

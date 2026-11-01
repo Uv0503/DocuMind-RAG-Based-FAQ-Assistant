@@ -16,9 +16,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from db import (create_session, create_user, db, ensure_schema, fetch_conversations,
                 fetch_documents, find_session_user, find_user_by_email, log_document,
-                log_interaction, verify_password)
+                log_interaction, require_db, verify_password)
 from model import answer_question
-from rag import rag_index, save_uploaded_text
+from rag import bound_sources, evidence_sufficient, rag_index, save_uploaded_text
 
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -55,6 +55,7 @@ app.add_middleware(
 class AskRequest(BaseModel):
     # Keep the public ask payload simple: the user only sends a question.
     question: str = Field(..., min_length=3, max_length=500)
+    debug: bool = False
 
     @field_validator("question", mode="before")
     @classmethod
@@ -100,12 +101,19 @@ async def current_user(credentials: HTTPAuthorizationCredentials = Depends(beare
 class Source(BaseModel):
     # Source chunks are returned with every grounded answer so users can inspect the evidence.
     chunk_id: int
+    source: str
+    heading: str = ""
     text: str
+    score: float
+    dense_score: Optional[float] = None
+    bm25_score: Optional[float] = None
+    rerank_score: Optional[float] = None
 
 
 class Answer(BaseModel):
     answer: str
     sources: List[Source]
+    retrieval_debug: Optional[dict] = None
 
 
 class Conversation(BaseModel):
@@ -172,12 +180,13 @@ def root():
 @app.get("/health/db", response_model=List[str])
 async def health_db():
     # Quick database check used during local setup and demos.
-    if db is None or not db.is_connected:
-        raise HTTPException(status_code=503, detail="Database is not connected")
-
-    rows = await db.fetch_all(
-        "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
-    )
+    try:
+        database = await require_db()
+        rows = await database.fetch_all(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Database is not connected") from exc
     return [r["table_name"] for r in rows]
 
 
@@ -245,19 +254,22 @@ async def ask(query: AskRequest, user: dict = Depends(current_user)):
     # This endpoint is the RAG orchestration boundary: retrieve first, generate second,
     # then persist the evidence and result for later inspection.
     # Retrieve the most relevant chunks before calling the LLM.
-    sources = rag_index.retrieve(query.question, top_k=3)
+    sources = rag_index.retrieve(query.question, top_k=int(os.getenv("RAG_TOP_K", "5")))
+    sources = bound_sources(sources, int(os.getenv("RAG_CONTEXT_TOKENS", "2600")))
 
     # If no documents exist or no chunks pass the relevance threshold, return and log the fallback.
-    if not sources:
+    if not evidence_sufficient(query.question, sources):
         try:
             await log_interaction(user["id"], query.question, "", FALLBACK_ANSWER, [])
         except Exception as exc:
             raise HTTPException(status_code=500, detail=f"Database write failed: {exc}")
-        return {"answer": FALLBACK_ANSWER, "sources": []}
+        return {"answer": FALLBACK_ANSWER, "sources": [],
+                "retrieval_debug": {"candidates": len(sources),
+                                    "reason": "missing_evidence_or_record_identifier"} if query.debug else None}
 
-    # Remove internal fields like score/source filename from the public API response.
     public_sources = [
-        {"chunk_id": source["chunk_id"], "text": source["text"]}
+        {key: source.get(key) for key in ("chunk_id", "source", "heading", "text",
+                                         "score", "dense_score", "bm25_score", "rerank_score")}
         for source in sources
     ]
 
@@ -281,7 +293,10 @@ async def ask(query: AskRequest, user: dict = Depends(current_user)):
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Database write failed: {exc}")
 
-    return {"answer": answer, "sources": public_sources}
+    return {"answer": answer, "sources": public_sources,
+            "retrieval_debug": {"mode": os.getenv("RAG_RETRIEVAL_MODE", "sparse"),
+                                "candidates": len(sources), "dense_available": rag_index.embeddings is not None}
+            if query.debug else None}
 
 
 @app.post("/upload")

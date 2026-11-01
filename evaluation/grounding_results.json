@@ -1,0 +1,144 @@
+[
+  {
+    "question": "How long can someone keep an adult print book from East Borough?",
+    "expected_source": "east_library.txt",
+    "unanswerable": false,
+    "answer": "An adult print book from East Borough Library can be kept for **21 calendar days** before it is due.\u30101\u3011",
+    "called_groq": true,
+    "groq_latency_ms": 1012.2526489994925,
+    "retrieved_source_ids": [
+      1,
+      2,
+      3,
+      4,
+      7
+    ],
+    "supporting_source_ids": [
+      1
+    ],
+    "citation_ids": [
+      1
+    ],
+    "citations_valid": true,
+    "cites_supporting_source": true,
+    "answer_check": true
+  },
+  {
+    "question": "How late can I cancel a Bay Ferry booking for a cash refund?",
+    "expected_source": "bay_ferry.txt",
+    "unanswerable": false,
+    "answer": "You can cancel a Bay\u202fFerry booking for a cash refund only **up to two hours before the scheduled sailing**. If you cancel within two hours of sailing, the fare is credited rather than refunded in cash. Source: Bay\u202fFerry Travel Terms\u30104\u3011.",
+    "called_groq": true,
+    "groq_latency_ms": 965.5037240008824,
+    "retrieved_source_ids": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "supporting_source_ids": [
+      4
+    ],
+    "citation_ids": [
+      4
+    ],
+    "citations_valid": true,
+    "cites_supporting_source": true,
+    "answer_check": true
+  },
+  {
+    "question": "What is Pinecrest's monthly ceiling on overnight guest stays?",
+    "expected_source": "pinecrest_housing.txt",
+    "unanswerable": false,
+    "answer": "Pinecrest allows an overnight visitor to stay for no more than **six nights in a calendar month**\u30106\u3011.",
+    "called_groq": true,
+    "groq_latency_ms": 651.358215000073,
+    "retrieved_source_ids": [
+      1,
+      2,
+      5,
+      6,
+      8
+    ],
+    "supporting_source_ids": [
+      6
+    ],
+    "citation_ids": [
+      6
+    ],
+    "citations_valid": true,
+    "cites_supporting_source": true,
+    "answer_check": true
+  },
+  {
+    "question": "What humidity range does Meridian target for paintings?",
+    "expected_source": "museum_care.txt",
+    "unanswerable": false,
+    "answer": "The Meridian Museum painting gallery aims for a relative humidity range of **45\u202f% to 55\u202f%**\u30107\u3011.",
+    "called_groq": true,
+    "groq_latency_ms": 1083.8245039994945,
+    "retrieved_source_ids": [
+      1,
+      2,
+      3,
+      7,
+      8
+    ],
+    "supporting_source_ids": [
+      7
+    ],
+    "citation_ids": [
+      7
+    ],
+    "citations_valid": true,
+    "cites_supporting_source": true,
+    "answer_check": true
+  },
+  {
+    "question": "What does the Riverbend team do when its oxygen meter fails calibration?",
+    "expected_source": "river_monitoring.txt",
+    "unanswerable": false,
+    "answer": "When the dissolved\u2011oxygen meter fails its calibration check, the Riverbend field team does the following:\n\n1. **Marks the reading as invalid** in the field log.  \n2. **Uses a backup meter** (if one is available) to obtain a valid measurement.  \n3. **Records the calibration failure** in the field log.  \n\nThese actions are specified in the Riverbend Watershed Field Protocol\u30108\u3011.",
+    "called_groq": true,
+    "groq_latency_ms": 1022.3948490001931,
+    "retrieved_source_ids": [
+      1,
+      2,
+      3,
+      7,
+      8
+    ],
+    "supporting_source_ids": [
+      8
+    ],
+    "citation_ids": [
+      8
+    ],
+    "citations_valid": true,
+    "cites_supporting_source": true,
+    "answer_check": true
+  },
+  {
+    "question": "What is the maximum security deposit at Pinecrest housing?",
+    "expected_source": null,
+    "unanswerable": true,
+    "answer": "I\u2019m sorry, but the provided text does not state a maximum security deposit amount for Pinecrest housing. [Source\u202f6] only notes that deposits are assessed after inventory and utility charges are reviewed, without specifying a dollar limit.",
+    "called_groq": true,
+    "groq_latency_ms": 10442.174146999605,
+    "retrieved_source_ids": [
+      1,
+      2,
+      5,
+      6,
+      8
+    ],
+    "supporting_source_ids": [],
+    "citation_ids": [
+      6
+    ],
+    "citations_valid": true,
+    "cites_supporting_source": null,
+    "answer_check": true
+  }
+]

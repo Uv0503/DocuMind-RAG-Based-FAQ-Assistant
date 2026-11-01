@@ -1,0 +1,275 @@
+{
+  "schema_version": 1,
+  "queries": [
+    {
+      "id": "handbook-annual-leave",
+      "document": "employee_handbook.txt",
+      "question": "How much paid vacation does a full-time employee get each year?",
+      "expected_answer": "20 days",
+      "source_page": null,
+      "question_type": "paraphrased numerical",
+      "relevant_text": "Full-time employees receive 20 days of paid annual leave during each calendar year."
+    },
+    {
+      "id": "handbook-learning-budget",
+      "document": "employee_handbook.txt",
+      "question": "Can the professional-development allowance pay for a certification, and what is its yearly limit?",
+      "expected_answer": "Yes. The annual limit is $1,200.",
+      "source_page": null,
+      "question_type": "relationship",
+      "relevant_text": "Every full-time employee has an annual professional-development budget of $1,200. The budget may be used for relevant courses, books, certifications, and conferences after manager approval."
+    },
+    {
+      "id": "handbook-review-schedule",
+      "document": "employee_handbook.txt",
+      "question": "When are formal employee evaluations held?",
+      "expected_answer": "Twice a year, in June and December.",
+      "source_page": null,
+      "question_type": "direct factual",
+      "relevant_text": "Formal performance reviews take place twice a year, in June and December."
+    },
+    {
+      "id": "security-password-length",
+      "document": "security_policy.txt",
+      "question": "What is the minimum permitted company-account password length?",
+      "expected_answer": "14 characters",
+      "source_page": null,
+      "question_type": "numerical",
+      "relevant_text": "Every company account must use a password containing at least 14 characters."
+    },
+    {
+      "id": "security-incident-deadline",
+      "document": "security_policy.txt",
+      "question": "How quickly should staff notify the security team after noticing a possible breach?",
+      "expected_answer": "Within one hour of discovery.",
+      "source_page": null,
+      "question_type": "hard paraphrase",
+      "relevant_text": "Employees must report a suspected security incident to the security team within one hour of discovery."
+    },
+    {
+      "id": "security-restricted-data",
+      "document": "security_policy.txt",
+      "question": "Which kinds of information are defined as restricted data?",
+      "expected_answer": "Authentication secrets, private encryption keys, and regulated customer records.",
+      "source_page": null,
+      "question_type": "definition",
+      "relevant_text": "Restricted data includes authentication secrets, private encryption keys, and regulated customer records."
+    },
+    {
+      "id": "travel-hotel-limit",
+      "document": "travel_policy.txt",
+      "question": "What nightly room rate can a traveler normally expense before tax?",
+      "expected_answer": "$180 per night before taxes.",
+      "source_page": null,
+      "question_type": "paraphrased numerical",
+      "relevant_text": "The standard hotel limit is $180 per night before taxes."
+    },
+    {
+      "id": "travel-flight-class",
+      "document": "travel_policy.txt",
+      "question": "Under what conditions is premium economy allowed?",
+      "expected_answer": "For flights of at least six hours with advance department-head approval.",
+      "source_page": null,
+      "question_type": "relationship",
+      "relevant_text": "Premium economy may be booked for a flight lasting six hours or longer when the department head approves it before purchase."
+    },
+    {
+      "id": "travel-report-deadline",
+      "document": "travel_policy.txt",
+      "question": "After coming home from a business trip, how long do I have to file expenses?",
+      "expected_answer": "15 calendar days.",
+      "source_page": null,
+      "question_type": "hard paraphrase",
+      "relevant_text": "An expense report must be submitted within 15 calendar days after the traveler returns."
+    },
+    {
+      "id": "handbook-standard-work-week",
+      "document": "employee_handbook.txt",
+      "question": "What weekly schedule is considered standard for employees?",
+      "expected_answer": "Forty hours, normally from Monday through Friday.",
+      "source_page": null,
+      "question_type": "direct factual",
+      "relevant_text": "The standard work week is forty hours, normally completed from Monday through Friday."
+    },
+    {
+      "id": "handbook-remote-work",
+      "document": "employee_handbook.txt",
+      "question": "How often may an employee work away from the office, and whose agreement is needed?",
+      "expected_answer": "Up to three days per week after agreeing on a schedule with their manager.",
+      "source_page": null,
+      "question_type": "relationship",
+      "relevant_text": "Employees may work remotely for up to three days each week after agreeing on a schedule with their manager."
+    },
+    {
+      "id": "handbook-new-hire-office-period",
+      "document": "employee_handbook.txt",
+      "question": "Why are recently hired staff expected to be on-site at first?",
+      "expected_answer": "To complete equipment setup and introductions during their first two weeks.",
+      "source_page": null,
+      "question_type": "hard semantic",
+      "relevant_text": "New employees should complete their first two weeks from the office so that equipment setup and introductions can be completed."
+    },
+    {
+      "id": "handbook-long-leave-notice",
+      "document": "employee_handbook.txt",
+      "question": "What advance notice applies when someone wants more than five consecutive working days off?",
+      "expected_answer": "The request should be submitted at least four weeks in advance.",
+      "source_page": null,
+      "question_type": "paraphrased numerical",
+      "relevant_text": "Leave requests longer than five consecutive working days should be submitted at least four weeks in advance."
+    },
+    {
+      "id": "handbook-sick-leave-allowance",
+      "document": "employee_handbook.txt",
+      "question": "What is the yearly paid absence allowance when an employee is ill?",
+      "expected_answer": "Up to 10 paid sick days per calendar year.",
+      "source_page": null,
+      "question_type": "hard paraphrase",
+      "relevant_text": "Employees may take up to 10 paid sick days per calendar year."
+    },
+    {
+      "id": "handbook-medical-certificate",
+      "document": "employee_handbook.txt",
+      "question": "At what point does a sickness absence require documentation from a doctor?",
+      "expected_answer": "When it continues for more than three consecutive working days.",
+      "source_page": null,
+      "question_type": "relationship",
+      "relevant_text": "A medical certificate is required when an absence continues for more than three consecutive working days."
+    },
+    {
+      "id": "handbook-learning-budget-exclusion",
+      "document": "employee_handbook.txt",
+      "question": "Is ordinary computer equipment an eligible professional-development purchase?",
+      "expected_answer": "No, general-purpose computer hardware is not eligible.",
+      "source_page": null,
+      "question_type": "factual",
+      "relevant_text": "It cannot be used to buy general-purpose computer hardware."
+    },
+    {
+      "id": "security-mfa-systems",
+      "document": "security_policy.txt",
+      "question": "For which company services is a second authentication factor compulsory?",
+      "expected_answer": "Email, source-code hosting, cloud infrastructure, and administrative systems.",
+      "source_page": null,
+      "question_type": "definition",
+      "relevant_text": "Multi-factor authentication is mandatory for email, source-code hosting, cloud infrastructure, and administrative systems."
+    },
+    {
+      "id": "security-incident-response-behavior",
+      "document": "security_policy.txt",
+      "question": "What should an employee do with evidence after a possible security event, and what investigation should they avoid?",
+      "expected_answer": "Preserve relevant evidence and do not attempt a personal forensic investigation.",
+      "source_page": null,
+      "question_type": "relationship",
+      "relevant_text": "Employees should preserve relevant evidence and avoid attempting their own forensic investigation."
+    },
+    {
+      "id": "security-classification-levels",
+      "document": "security_policy.txt",
+      "question": "What are the four sensitivity categories used for company information?",
+      "expected_answer": "Public, internal, confidential, and restricted.",
+      "source_page": null,
+      "question_type": "definition",
+      "relevant_text": "Company information is classified as public, internal, confidential, or restricted."
+    },
+    {
+      "id": "security-restricted-storage",
+      "document": "security_policy.txt",
+      "question": "How must the most sensitive data be stored and protected while moving or at rest?",
+      "expected_answer": "Only in explicitly approved systems, encrypted both in transit and at rest.",
+      "source_page": null,
+      "question_type": "hard semantic",
+      "relevant_text": "Restricted data may only be stored in explicitly approved systems and must be encrypted both in transit and at rest."
+    },
+    {
+      "id": "security-device-auto-lock",
+      "document": "security_policy.txt",
+      "question": "After how much idle time must a work laptop lock itself?",
+      "expected_answer": "Ten minutes.",
+      "source_page": null,
+      "question_type": "paraphrased numerical",
+      "relevant_text": "Company laptops must use full-disk encryption and automatically lock after ten minutes of inactivity."
+    },
+    {
+      "id": "security-update-deadline",
+      "document": "security_policy.txt",
+      "question": "How soon after release should operating-system security patches be applied?",
+      "expected_answer": "Within seven days of release.",
+      "source_page": null,
+      "question_type": "numerical",
+      "relevant_text": "Operating-system security updates must be installed within seven days of release."
+    },
+    {
+      "id": "security-vendor-controls",
+      "document": "security_policy.txt",
+      "question": "What governance is required before an outside provider receives access, and how frequently are its permissions checked?",
+      "expected_answer": "It needs a named internal owner, documented business purpose, and expiration date; permissions are reviewed quarterly.",
+      "source_page": null,
+      "question_type": "relationship",
+      "relevant_text": "Third-party access must have a named internal owner, a documented business purpose, and an expiration date. Vendor permissions must follow the principle of least privilege and must be reviewed every quarter."
+    },
+    {
+      "id": "travel-booking-channel",
+      "document": "travel_policy.txt",
+      "question": "Where are staff expected to arrange authorized work trips?",
+      "expected_answer": "Through the company travel portal.",
+      "source_page": null,
+      "question_type": "paraphrased factual",
+      "relevant_text": "Employees should book approved business travel through the company travel portal."
+    },
+    {
+      "id": "travel-hotel-exceptions",
+      "document": "travel_policy.txt",
+      "question": "When is lodging above the normal nightly ceiling acceptable?",
+      "expected_answer": "When the conference hotel is required or no safe, practical option is available within the limit.",
+      "source_page": null,
+      "question_type": "relationship",
+      "relevant_text": "A higher rate is allowed when the conference hotel is required or when no safe, practical option is available within the limit."
+    },
+    {
+      "id": "travel-meal-allowance",
+      "document": "travel_policy.txt",
+      "question": "What is the maximum daily food reimbursement while traveling?",
+      "expected_answer": "$65 per day.",
+      "source_page": null,
+      "question_type": "numerical",
+      "relevant_text": "Travelers may claim meal expenses up to $65 per day."
+    },
+    {
+      "id": "travel-receipt-threshold",
+      "document": "travel_policy.txt",
+      "question": "Which individual purchases need an itemized receipt?",
+      "expected_answer": "Any individual expense of $25 or more.",
+      "source_page": null,
+      "question_type": "paraphrased numerical",
+      "relevant_text": "Alcohol is not reimbursable, and itemized receipts are required for any individual expense of $25 or more."
+    },
+    {
+      "id": "travel-provided-meals",
+      "document": "travel_policy.txt",
+      "question": "Can a traveler expense food that a conference or client already supplied?",
+      "expected_answer": "No, meals already provided should not be claimed again.",
+      "source_page": null,
+      "question_type": "hard paraphrase",
+      "relevant_text": "Meals already provided by a hotel, conference, or client should not be claimed again."
+    },
+    {
+      "id": "travel-ground-transport-default",
+      "document": "travel_policy.txt",
+      "question": "What local transportation option should be preferred when conditions permit?",
+      "expected_answer": "Public transportation, when it is safe and practical.",
+      "source_page": null,
+      "question_type": "semantic factual",
+      "relevant_text": "Public transportation should be used when it is safe and practical."
+    },
+    {
+      "id": "travel-car-rental-approval",
+      "document": "travel_policy.txt",
+      "question": "May an employee hire a car for a work trip without asking first?",
+      "expected_answer": "No, car rentals require advance manager approval.",
+      "source_page": null,
+      "question_type": "hard semantic",
+      "relevant_text": "Car rentals require advance manager approval."
+    }
+  ]
+}

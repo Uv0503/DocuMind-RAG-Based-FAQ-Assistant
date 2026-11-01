@@ -479,7 +479,8 @@ export default function Home() {
                         <summary>Sources used ({item.sources.length})</summary>
                         {item.sources.map((source) => (
                           <div className="source" key={source.chunk_id}>
-                            <b>Chunk {source.chunk_id}</b>
+                            <b>Source {source.chunk_id}: {source.source || 'knowledge base'}{source.heading ? ` / ${source.heading}` : ''}</b>
+                            <small>Retrieval score: {source.rerank_score ?? source.score ?? 'n/a'}{source.rerank_score != null ? ' (reranked)' : ''}</small>
                             <span>{source.text}</span>
                           </div>
                         ))}
